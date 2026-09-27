@@ -19,12 +19,13 @@ the Confluence Project Context page and this file before any work.
 
 ## Stack and deployment
 
-Decided with the owner and recorded in the Project Context page, then here:
+Decided with Alex and recorded in the Project Context page:
 
-- Stack: _to be decided_
-- CI: _to be decided_ (must expose a check that PRs require)
-- Dev deployment: _to be decided_
-- Production deployment: _to be decided_
+- Stack: plain HTML, CSS and JavaScript in `src/`, without a build step or runtime dependencies. Tests use Node's built-in test runner: `npm test` (`node --test`).
+- CI: `.github/workflows/ci.yml` runs on pull requests and pushes, with a manual SHA fallback that publishes commit status `test`. Both protected branches require `test`.
+- Dev deployment: `.github/workflows/deploy-dev.yml` tests and smoke-checks every `develop` push, then records a deployment of that commit to `dev`. There is no separate host or dev URL.
+- Production deployment: `.github/workflows/deploy-production.yml` manually deploys an exact `main` commit to GitHub Pages and records it as `production`. Only DevOps runs this for an authorized release operation.
+- No deployment secrets are required.
 
 ## GitHub Actions on this account
 
