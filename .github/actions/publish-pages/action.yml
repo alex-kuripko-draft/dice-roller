@@ -1,0 +1,64 @@
+name: Publish Pages (dev + production)
+description: >
+  Builds one combined GitHub Pages site with the product live at the root and
+  its dev build under /dev/, so both environments have a real, browsable URL
+  at all times. Publishes the commit for `role` and reuses the other role's
+  last successful deployment (or a placeholder page if it has none yet).
+inputs:
+  role:
+    description: "dev | production"
+    required: true
+  sha:
+    description: Commit being published for `role` (already checked out).
+    required: true
+  content-dir:
+    description: Directory with the static site, relative to the repo root.
+    required: true
+    default: src
+  token:
+    required: true
+outputs:
+  page_url:
+    value: ${{ steps.pages.outputs.page_url }}
+runs:
+  using: composite
+  steps:
+    - name: Assemble combined site (own content + other role's last release)
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        REPO: ${{ github.repository }}
+        ROLE: ${{ inputs.role }}
+        CONTENT_DIR: ${{ inputs.content-dir }}
+      run: |
+        set -euo pipefail
+        rm -rf .publish-site .other-checkout && mkdir -p .publish-site
+        if [[ "$ROLE" == production ]]; then own=.; other=dev; else own=dev; other=.; fi
+        mkdir -p ".publish-site/$own"
+        cp -r "$CONTENT_DIR"/. ".publish-site/$own/"
+
+        other_sha=""
+        for id in $(gh api "repos/$REPO/deployments?environment=$other&per_page=30" --jq '.[].id'); do
+          ok=$(gh api "repos/$REPO/deployments/$id/statuses" --jq \
+            'map(select(.state=="success")) | length > 0')
+          if [[ "$ok" == "true" ]]; then
+            other_sha=$(gh api "repos/$REPO/deployments/$id" --jq .sha)
+            break
+          fi
+        done
+
+        mkdir -p ".publish-site/$other"
+        if [[ -n "$other_sha" ]]; then
+          git worktree add --detach .other-checkout "$other_sha" >/dev/null
+          cp -r ".other-checkout/$CONTENT_DIR"/. ".publish-site/$other/"
+          git worktree remove --force .other-checkout
+        else
+          printf '<!doctype html><meta charset="utf-8"><title>Not deployed yet</title><p>No successful %s deployment yet.</p>' \
+            "$other" > ".publish-site/$other/index.html"
+        fi
+    - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+    - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+      with:
+        path: .publish-site
+    - id: pages
+      uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

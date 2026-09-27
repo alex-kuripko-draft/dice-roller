@@ -1,20 +1,30 @@
 name: Deploy dev
+# Every push to develop is tested and published to the dev environment: a
+# real, browsable GitHub Pages URL at /dev/ (production stays at the root,
+# republished from its last successful release so this run never clobbers it).
 on:
   push:
     branches: [develop]
   workflow_dispatch:
 permissions:
   contents: read
+  pages: write
+  id-token: write
   deployments: write
 concurrency:
-  group: deploy-dev
+  group: pages-deploy
   cancel-in-progress: false
 jobs:
   deploy:
     runs-on: ubuntu-24.04
+    environment:
+      name: dev
+      url: ${{ steps.publish.outputs.page_url }}
     steps:
       - id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
@@ -23,6 +33,17 @@ jobs:
         run: |
           test -s src/index.html
           grep -q '<title>Dice Roller</title>' src/index.html
+      - id: publish
+        uses: ./.github/actions/publish-pages
+        with:
+          role: dev
+          sha: ${{ github.sha }}
+          content-dir: src
+          token: ${{ github.token }}
+      - name: Smoke check the hosted dev page
+        env:
+          PAGE_URL: ${{ steps.publish.outputs.page_url }}
+        run: curl -fsSL "${PAGE_URL}dev/" | grep -q '<title>Dice Roller</title>'
       - name: Record dev deployment
         if: always() && steps.checkout.outcome == 'success'
         uses: ./.github/actions/record-deployment
@@ -30,5 +51,5 @@ jobs:
           environment: dev
           sha: ${{ github.sha }}
           state: ${{ job.status == 'success' && 'success' || 'failure' }}
-          environment-url: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/src/index.html
+          environment-url: ${{ steps.publish.outputs.page_url }}dev/
           token: ${{ github.token }}
