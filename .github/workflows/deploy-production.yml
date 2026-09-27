@@ -24,7 +24,8 @@ jobs:
       - name: Validate SHA format
         env:
           SHA: ${{ inputs.sha }}
-        run: [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]
+        run: |
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]
       - id: checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
