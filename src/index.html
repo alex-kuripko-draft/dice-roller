@@ -1,14 +1,82 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Dice Roller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main>
-      <h1>Dice Roller</h1>
-      <p>The Dice Roller design and implementation are tracked in CP-8 and CP-7.</p>
+    <main class="felt">
+      <section class="tray" aria-label="Dice roller">
+        <header class="tray__head">
+          <p class="tray__brand">DICE ROLLER</p>
+          <p class="tray__tag">roll it, track it</p>
+        </header>
+
+        <form class="tray__controls" id="roll-form" novalidate>
+          <div class="tray__field">
+            <label class="tray__label" for="dice-count">Dice (N)</label>
+            <input
+              id="dice-count"
+              name="dice-count"
+              class="tray__input"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              value="2"
+              aria-describedby="dice-count-error"
+            />
+            <p id="dice-count-error" class="tray__error" role="alert" hidden></p>
+          </div>
+          <div class="tray__field">
+            <label class="tray__label" for="dice-sides">Sides (M)</label>
+            <input
+              id="dice-sides"
+              name="dice-sides"
+              class="tray__input"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              value="6"
+              aria-describedby="dice-sides-error"
+            />
+            <p id="dice-sides-error" class="tray__error" role="alert" hidden></p>
+          </div>
+          <button type="submit" class="btn btn--roll" id="roll-btn">Roll</button>
+        </form>
+
+        <div class="tray__result" aria-live="polite" aria-atomic="true">
+          <p class="tray__invite" id="result-empty">No rolls yet — set your dice and press Roll.</p>
+          <div class="tray__latest" id="result-latest" hidden>
+            <p class="tray__latest-label" id="latest-label"></p>
+            <div class="tray__dice" id="latest-dice"></div>
+            <p class="tray__latest-sum">Sum <span id="latest-sum" class="tray__latest-sum-value"></span></p>
+          </div>
+        </div>
+
+        <div class="tray__totals">
+          <span class="tray__totals-label">Running total</span>
+          <span class="tray__totals-amount" id="running-total">0</span>
+        </div>
+
+        <div class="tray__tear" aria-hidden="true"></div>
+
+        <div class="tray__history-head">
+          <h2 class="tray__history-title">History</h2>
+          <button type="button" class="btn btn--clear" id="clear-btn" disabled>Clear history</button>
+        </div>
+        <p class="tray__invite tray__invite--history" id="history-empty">Rolls will appear here, newest first.</p>
+        <ol class="tray__history" id="history-list" hidden></ol>
+      </section>
     </main>
+
+    <script type="module" src="./app.js"></script>
   </body>
 </html>
